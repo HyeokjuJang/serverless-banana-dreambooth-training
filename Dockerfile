@@ -36,7 +36,9 @@ ADD convert_diffusers_to_original_stable_diffusion.py .
 ADD train_dreambooth.py .
 ADD train.sh .
 
+ADD . .
+
 # Add your custom app code, init() and inference()
 ADD app.py .
 
-CMD python3 -u server.py
+CMD python3 -u app.py
