@@ -7,9 +7,13 @@ from zipfile import ZipFile
 from transformers import pipeline
 from diffusers.models import AutoencoderKL
 from diffusers import StableDiffusionPipeline
+from potassium import Potassium, Request, Response
+
+app = Potassium("my_app")
 
 # Init is ran on server startup
 # Load your model to GPU as a global variable here using the variable name "model"
+@app.init
 def init():
     global vae
     model = "runwayml/stable-diffusion-v1-5"
@@ -24,14 +28,20 @@ def init():
     ).to("cuda")
     print("done")
 
+    context = {
+        "pipe": pipe,
+        "vae": vae
+    }
+
 # Inference is ran for every server call
 # Reference your preloaded global model variable here.
-def inference(model_inputs:dict) -> dict:
+@app.handler("/")
+def inference(context:dict, request: Request) -> Response:
     global model
     global vae
 
     # Parse out arguments
-    zip_file_id = model_inputs.get('file_id', None)
+    zip_file_id = context.get('file_id', None)
 
     #From parameter file_id download the zip from UploadedPics folder
     zip_file_name = gd.download(zip_file_id)
@@ -71,4 +81,10 @@ def inference(model_inputs:dict) -> dict:
     newId = gd.upload('model.ckpt')
 
     # Return the results as a dictionary
-    return {'response': str(newId)}
+    return Response(
+        json = {'response': str(newId)}, 
+        status=200
+    )
+
+if __name__ == "__main__":
+    app.serve()
